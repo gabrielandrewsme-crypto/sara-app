@@ -11,7 +11,9 @@
       "backgroundColor": "#000000",
       "resizeMode": "contain"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sara.app"
@@ -29,6 +31,14 @@
     "extra": {
       "supabaseUrl": "",
       "supabaseAnonKey": ""
-    }
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Sara precisa do microfone para você falar com ela em vez de digitar."
+        }
+      ]
+    ]
   }
 }

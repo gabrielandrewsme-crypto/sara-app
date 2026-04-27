@@ -1,7 +1,8 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSaraDispatcher } from '../hooks/useSaraDispatcher';
+import { useVoiceInput } from '../hooks/useVoiceInput';
 import { AppStackParamList } from '../navigation/types';
 import { saraService } from '../services/saraService';
 import { theme } from '../styles/theme';
@@ -28,7 +30,7 @@ type Bubble = {
 
 const GREETING: Bubble = {
   role: 'assistant',
-  content: 'Oi! Me conta o que você quer organizar hoje.',
+  content: 'Oi! Me conta o que você quer organizar hoje. Você pode digitar ou tocar no microfone.',
 };
 
 export function ChatScreen({}: Props) {
@@ -36,17 +38,29 @@ export function ChatScreen({}: Props) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const dispatch = useSaraDispatcher();
+  const voice = useVoiceInput();
   const scrollRef = useRef<ScrollView>(null);
 
+  useEffect(() => {
+    if (voice.error) {
+      Alert.alert('Microfone', voice.error);
+    }
+  }, [voice.error]);
+
   function scrollToEnd() {
-    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    requestAnimationFrame(() =>
+      scrollRef.current?.scrollToEnd({ animated: true }),
+    );
   }
 
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
 
-    const nextBubbles: Bubble[] = [...bubbles, { role: 'user', content: text }];
+    const nextBubbles: Bubble[] = [
+      ...bubbles,
+      { role: 'user', content: text },
+    ];
     setBubbles(nextBubbles);
     setInput('');
     setLoading(true);
@@ -85,6 +99,22 @@ export function ChatScreen({}: Props) {
       scrollToEnd();
     }
   }
+
+  async function handleMic() {
+    if (loading) return;
+    if (voice.state === 'idle') {
+      await voice.start();
+    } else if (voice.state === 'recording') {
+      const text = await voice.stopAndTranscribe();
+      if (text) {
+        setInput((curr) => (curr ? `${curr} ${text}` : text));
+      }
+    }
+  }
+
+  const isRecording = voice.state === 'recording';
+  const isTranscribing = voice.state === 'transcribing';
+  const canSend = !!input.trim() && !loading && !isRecording && !isTranscribing;
 
   return (
     <KeyboardAvoidingView
@@ -140,25 +170,64 @@ export function ChatScreen({}: Props) {
         ) : null}
       </ScrollView>
 
+      {isRecording ? (
+        <View style={styles.recordingBanner}>
+          <View style={styles.recordingDot} />
+          <Text style={styles.recordingText}>
+            Gravando… toque no microfone pra parar
+          </Text>
+        </View>
+      ) : null}
+      {isTranscribing ? (
+        <View style={styles.recordingBanner}>
+          <ActivityIndicator color={theme.colors.primary} size="small" />
+          <Text style={styles.recordingText}>Transcrevendo…</Text>
+        </View>
+      ) : null}
+
       <View style={styles.inputBar}>
         <TextInput
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder="Fala com a Sara…"
+          placeholder={
+            isRecording
+              ? 'Gravando…'
+              : isTranscribing
+                ? 'Transcrevendo…'
+                : 'Fala com a Sara…'
+          }
           placeholderTextColor={theme.colors.textMuted}
           multiline
-          editable={!loading}
+          editable={!loading && !isRecording && !isTranscribing}
           onSubmitEditing={send}
           blurOnSubmit
           returnKeyType="send"
         />
+
+        <Pressable
+          onPress={handleMic}
+          disabled={loading || isTranscribing}
+          style={({ pressed }) => [
+            styles.iconButton,
+            isRecording && styles.micButtonActive,
+            pressed && styles.iconButtonPressed,
+            (loading || isTranscribing) && styles.iconButtonDisabled,
+          ]}
+        >
+          <Text
+            style={[styles.iconText, isRecording && styles.iconTextActive]}
+          >
+            {isRecording ? '■' : '🎤'}
+          </Text>
+        </Pressable>
+
         <Pressable
           onPress={send}
-          disabled={!input.trim() || loading}
+          disabled={!canSend}
           style={({ pressed }) => [
             styles.sendButton,
-            (!input.trim() || loading) && styles.sendButtonDisabled,
+            !canSend && styles.iconButtonDisabled,
             pressed && styles.sendButtonPressed,
           ]}
         >
@@ -229,6 +298,26 @@ const styles = StyleSheet.create({
   hintError: {
     color: theme.colors.danger,
   },
+  recordingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.danger,
+  },
+  recordingText: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -253,6 +342,34 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 16,
   },
+  iconButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconButtonPressed: {
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  iconButtonDisabled: {
+    opacity: 0.4,
+  },
+  micButtonActive: {
+    backgroundColor: theme.colors.danger,
+    borderColor: theme.colors.danger,
+  },
+  iconText: {
+    fontSize: 20,
+  },
+  iconTextActive: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
   sendButton: {
     width: 48,
     height: 48,
@@ -260,9 +377,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: theme.colors.surface,
   },
   sendButtonPressed: {
     backgroundColor: theme.colors.primaryPressed,
