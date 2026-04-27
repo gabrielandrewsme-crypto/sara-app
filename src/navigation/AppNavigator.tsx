@@ -1,12 +1,25 @@
 import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
+import { DataProviders } from '../hooks/DataProviders';
 import { useAuth } from '../hooks/useAuth';
 import { ChatScreen } from '../screens/ChatScreen';
+import { EventFormScreen } from '../screens/EventFormScreen';
+import { EventsScreen } from '../screens/EventsScreen';
+import { FinanceFormScreen } from '../screens/FinanceFormScreen';
+import { FinancesScreen } from '../screens/FinancesScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { IdeaFormScreen } from '../screens/IdeaFormScreen';
+import { IdeasScreen } from '../screens/IdeasScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { NoteFormScreen } from '../screens/NoteFormScreen';
+import { NotesScreen } from '../screens/NotesScreen';
+import { RoutineFormScreen } from '../screens/RoutineFormScreen';
+import { RoutinesScreen } from '../screens/RoutinesScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
 import { SplashScreen } from '../screens/SplashScreen';
+import { TaskFormScreen } from '../screens/TaskFormScreen';
+import { TasksScreen } from '../screens/TasksScreen';
 import { theme } from '../styles/theme';
 import { AppStackParamList, AuthStackParamList } from './types';
 
@@ -25,10 +38,12 @@ const navTheme = {
   },
 };
 
+const screenContent = { backgroundColor: theme.colors.background };
+
 function AuthNavigator() {
   return (
     <AuthStack.Navigator
-      screenOptions={{ headerShown: false, contentStyle: styles.content }}
+      screenOptions={{ headerShown: false, contentStyle: screenContent }}
     >
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="SignUp" component={SignUpScreen} />
@@ -43,7 +58,7 @@ function AppNavigatorInner() {
         headerStyle: { backgroundColor: theme.colors.background },
         headerTintColor: theme.colors.text,
         headerShadowVisible: false,
-        contentStyle: styles.content,
+        contentStyle: screenContent,
       }}
     >
       <AppStack.Screen
@@ -56,6 +71,72 @@ function AppNavigatorInner() {
         component={ChatScreen}
         options={{ title: 'Chat Sara' }}
       />
+
+      <AppStack.Screen
+        name="Routines"
+        component={RoutinesScreen}
+        options={{ title: 'Rotinas' }}
+      />
+      <AppStack.Screen
+        name="RoutineForm"
+        component={RoutineFormScreen}
+        options={{ title: 'Rotina' }}
+      />
+
+      <AppStack.Screen
+        name="Tasks"
+        component={TasksScreen}
+        options={{ title: 'Tarefas' }}
+      />
+      <AppStack.Screen
+        name="TaskForm"
+        component={TaskFormScreen}
+        options={{ title: 'Tarefa' }}
+      />
+
+      <AppStack.Screen
+        name="Events"
+        component={EventsScreen}
+        options={{ title: 'Agenda' }}
+      />
+      <AppStack.Screen
+        name="EventForm"
+        component={EventFormScreen}
+        options={{ title: 'Evento' }}
+      />
+
+      <AppStack.Screen
+        name="Notes"
+        component={NotesScreen}
+        options={{ title: 'Notas' }}
+      />
+      <AppStack.Screen
+        name="NoteForm"
+        component={NoteFormScreen}
+        options={{ title: 'Nota' }}
+      />
+
+      <AppStack.Screen
+        name="Ideas"
+        component={IdeasScreen}
+        options={{ title: 'Ideias' }}
+      />
+      <AppStack.Screen
+        name="IdeaForm"
+        component={IdeaFormScreen}
+        options={{ title: 'Ideia' }}
+      />
+
+      <AppStack.Screen
+        name="Finances"
+        component={FinancesScreen}
+        options={{ title: 'Finanças' }}
+      />
+      <AppStack.Screen
+        name="FinanceForm"
+        component={FinanceFormScreen}
+        options={{ title: 'Lançamento' }}
+      />
     </AppStack.Navigator>
   );
 }
@@ -67,13 +148,19 @@ export function RootNavigator() {
     return <SplashScreen />;
   }
 
+  if (!session) {
+    return (
+      <NavigationContainer theme={navTheme}>
+        <AuthNavigator />
+      </NavigationContainer>
+    );
+  }
+
   return (
     <NavigationContainer theme={navTheme}>
-      {session ? <AppNavigatorInner /> : <AuthNavigator />}
+      <DataProviders>
+        <AppNavigatorInner />
+      </DataProviders>
     </NavigationContainer>
   );
 }
-
-const styles = {
-  content: { backgroundColor: theme.colors.background },
-};

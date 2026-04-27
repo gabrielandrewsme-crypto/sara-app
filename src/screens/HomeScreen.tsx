@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { useAuth } from '../hooks/useAuth';
 import { AppStackParamList } from '../navigation/types';
@@ -8,6 +8,20 @@ import { globalStyles } from '../styles/globalStyles';
 import { theme } from '../styles/theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Home'>;
+
+type ModuleRoute = Extract<
+  keyof AppStackParamList,
+  'Routines' | 'Tasks' | 'Events' | 'Notes' | 'Ideas' | 'Finances'
+>;
+
+const MODULES: { route: ModuleRoute; title: string; hint: string }[] = [
+  { route: 'Routines', title: 'Rotinas', hint: 'Seu dia em blocos.' },
+  { route: 'Tasks', title: 'Tarefas', hint: 'O que precisa sair hoje.' },
+  { route: 'Events', title: 'Agenda', hint: 'Compromissos e prazos.' },
+  { route: 'Notes', title: 'Notas', hint: 'Pra não esquecer.' },
+  { route: 'Ideas', title: 'Ideias', hint: 'Pensamentos soltos.' },
+  { route: 'Finances', title: 'Finanças', hint: 'Entra e sai.' },
+];
 
 function getDisplayName(metadata: Record<string, unknown> | undefined) {
   const name = metadata?.full_name;
@@ -28,18 +42,18 @@ export function HomeScreen({ navigation }: Props) {
         <Text style={globalStyles.muted}>O que vamos organizar hoje?</Text>
       </View>
 
-      <PlaceholderCard
-        title="Rotina do dia"
-        hint="Em breve: seus blocos de tempo."
-      />
-      <PlaceholderCard
-        title="Tarefas"
-        hint="Em breve: lista simples e direta."
-      />
-      <PlaceholderCard
-        title="Agenda"
-        hint="Em breve: seus próximos compromissos."
-      />
+      <View style={styles.grid}>
+        {MODULES.map((m) => (
+          <Pressable
+            key={m.route}
+            style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
+            onPress={() => navigation.navigate(m.route)}
+          >
+            <Text style={styles.tileTitle}>{m.title}</Text>
+            <Text style={styles.tileHint}>{m.hint}</Text>
+          </Pressable>
+        ))}
+      </View>
 
       <Button
         label="Falar com a Sara"
@@ -57,15 +71,6 @@ export function HomeScreen({ navigation }: Props) {
   );
 }
 
-function PlaceholderCard({ title, hint }: { title: string; hint: string }) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardHint}>{hint}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: theme.spacing.lg,
@@ -75,22 +80,33 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: theme.spacing.xl,
   },
-  card: {
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
+  },
+  tile: {
+    width: '47.5%',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+    minHeight: 120,
+    justifyContent: 'space-between',
   },
-  cardTitle: {
-    ...theme.typography.heading,
-    fontSize: 20,
+  tilePressed: {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderColor: theme.colors.primary,
+  },
+  tileTitle: {
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    fontSize: 20,
+    fontWeight: '700',
   },
-  cardHint: {
-    ...theme.typography.caption,
+  tileHint: {
     color: theme.colors.textMuted,
+    fontSize: 13,
+    marginTop: theme.spacing.xs,
   },
 });
