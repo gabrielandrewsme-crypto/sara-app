@@ -1,11 +1,15 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { theme } from '../styles/theme';
 
 export function SplashScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>Sara</Text>
+      <Image
+        source={require('../../assets/logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <ActivityIndicator color={theme.colors.primary} style={styles.spinner} />
     </View>
   );
@@ -19,10 +23,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    fontSize: 56,
-    fontWeight: '700',
-    color: theme.colors.text,
-    letterSpacing: 2,
+    width: 180,
+    height: 180,
   },
   spinner: {
     marginTop: theme.spacing.xl,

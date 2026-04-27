@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -53,6 +54,11 @@ export function LoginScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.brand}>Sara</Text>
           <Text style={globalStyles.muted}>Sua organização, sem ruído.</Text>
         </View>
@@ -106,6 +112,12 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: theme.spacing.xxl,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: theme.spacing.md,
   },
   brand: {
     fontSize: 48,

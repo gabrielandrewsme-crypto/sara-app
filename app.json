@@ -5,7 +5,9 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/logo.png",
     "splash": {
+      "image": "./assets/logo.png",
       "backgroundColor": "#000000",
       "resizeMode": "contain"
     },
@@ -17,8 +19,12 @@
     "android": {
       "package": "com.sara.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#000000"
       }
+    },
+    "web": {
+      "favicon": "./assets/logo.png"
     },
     "extra": {
       "supabaseUrl": "",
