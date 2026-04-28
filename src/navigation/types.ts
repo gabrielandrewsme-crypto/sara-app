@@ -6,6 +6,7 @@ export type AuthStackParamList = {
 export type AppStackParamList = {
   Home: undefined;
   Chat: undefined;
+  Account: undefined;
 
   Routines: undefined;
   RoutineForm: { id?: string } | undefined;

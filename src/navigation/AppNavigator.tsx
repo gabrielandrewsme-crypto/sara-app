@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { DataProviders } from '../hooks/DataProviders';
 import { useAuth } from '../hooks/useAuth';
+import { AccountScreen } from '../screens/AccountScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { EventFormScreen } from '../screens/EventFormScreen';
 import { EventsScreen } from '../screens/EventsScreen';
@@ -70,6 +71,11 @@ function AppNavigatorInner() {
         name="Chat"
         component={ChatScreen}
         options={{ title: 'Chat Sara' }}
+      />
+      <AppStack.Screen
+        name="Account"
+        component={AccountScreen}
+        options={{ title: 'Minha conta' }}
       />
 
       <AppStack.Screen

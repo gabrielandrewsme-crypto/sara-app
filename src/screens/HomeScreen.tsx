@@ -23,23 +23,42 @@ const MODULES: { route: ModuleRoute; title: string; hint: string }[] = [
   { route: 'Finances', title: 'Finanças', hint: 'Entra e sai.' },
 ];
 
-function getDisplayName(metadata: Record<string, unknown> | undefined) {
+function getDisplayName(metadata: Record<string, unknown> | undefined): string {
   const name = metadata?.full_name;
-  return typeof name === 'string' && name.length > 0 ? name : 'por aí';
+  return typeof name === 'string' && name.length > 0 ? name : '';
+}
+
+function getInitial(name: string, email: string): string {
+  const source = name || email;
+  return source ? source.trim().charAt(0).toUpperCase() : '?';
 }
 
 export function HomeScreen({ navigation }: Props) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const displayName = getDisplayName(user?.user_metadata);
+  const initial = getInitial(displayName, user?.email ?? '');
+  const greeting = displayName || 'por aí';
 
   return (
     <ScrollView
       style={globalStyles.screen}
       contentContainerStyle={styles.content}
     >
-      <View style={styles.header}>
-        <Text style={globalStyles.title}>Olá, {displayName}</Text>
-        <Text style={globalStyles.muted}>O que vamos organizar hoje?</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.headerText}>
+          <Text style={globalStyles.title}>Olá, {greeting}</Text>
+          <Text style={globalStyles.muted}>O que vamos organizar hoje?</Text>
+        </View>
+        <Pressable
+          onPress={() => navigation.navigate('Account')}
+          style={({ pressed }) => [
+            styles.avatarButton,
+            pressed && styles.avatarButtonPressed,
+          ]}
+          hitSlop={8}
+        >
+          <Text style={styles.avatarText}>{initial}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.grid}>
@@ -60,13 +79,6 @@ export function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Chat')}
         style={{ marginTop: theme.spacing.lg }}
       />
-
-      <Button
-        label="Sair"
-        variant="ghost"
-        onPress={signOut}
-        style={{ marginTop: theme.spacing.md }}
-      />
     </ScrollView>
   );
 }
@@ -77,8 +89,33 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.xl,
   },
-  header: {
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  headerText: {
+    flex: 1,
+  },
+  avatarButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarButtonPressed: {
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  avatarText: {
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '700',
   },
   grid: {
     flexDirection: 'row',

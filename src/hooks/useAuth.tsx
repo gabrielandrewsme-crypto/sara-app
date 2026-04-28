@@ -16,6 +16,7 @@ type AuthContextValue = {
   signIn: (input: SignInInput) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
+  updateName: (fullName: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -64,6 +65,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       signOut: async () => {
         await authService.signOut();
+      },
+      updateName: async (fullName: string) => {
+        const { data, error } = await supabase.auth.updateUser({
+          data: { full_name: fullName },
+        });
+        if (error) throw error;
+        if (data.user) {
+          setSession((curr) =>
+            curr ? { ...curr, user: data.user! } : curr,
+          );
+        }
       },
     }),
     [session, initializing],
