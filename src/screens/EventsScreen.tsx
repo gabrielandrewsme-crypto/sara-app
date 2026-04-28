@@ -80,6 +80,7 @@ export function EventsScreen({ navigation }: Props) {
                   }`}
                   accent={TYPE_COLOR[ev.type]}
                   onPress={() => navigation.navigate('EventForm', { id: ev.id })}
+                  editable
                 />
               ))}
             </View>

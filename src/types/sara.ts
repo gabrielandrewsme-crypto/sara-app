@@ -35,7 +35,9 @@ export type SaraCreateRoutineAction = {
   data: {
     title: string;
     description?: string | null;
-    day_of_week: number;
+    days_of_week?: number[];
+    /** Backwards-compat: older prompts may still send a single day. */
+    day_of_week?: number;
     time?: string | null;
   };
   response: string;

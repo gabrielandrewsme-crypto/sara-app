@@ -36,6 +36,7 @@ export function IdeasScreen({ navigation }: Props) {
               subtitle={idea.content}
               meta={`${idea.type === 'mindmap' ? 'Mapa mental' : 'Texto'} · ${formatDateBR(idea.updated_at)}`}
               onPress={() => navigation.navigate('IdeaForm', { id: idea.id })}
+              editable
             />
           ))
         )}

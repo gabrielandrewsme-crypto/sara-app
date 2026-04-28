@@ -34,14 +34,35 @@ export function useSaraDispatcher() {
           }
 
           case 'create_routine': {
-            const item = await routines.create({
-              title: action.data.title,
-              description: action.data.description ?? null,
-              day_of_week: action.data.day_of_week,
-              time: action.data.time ?? null,
-              is_active: true,
-            });
-            return { ok: true, summary: `Rotina criada: ${item.title}` };
+            const days = (() => {
+              const arr = action.data.days_of_week;
+              if (Array.isArray(arr) && arr.length > 0) {
+                return arr.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+              }
+              if (typeof action.data.day_of_week === 'number') {
+                return [action.data.day_of_week];
+              }
+              return [0, 1, 2, 3, 4, 5, 6];
+            })();
+            if (days.length === 0) {
+              return { ok: false, error: 'Nenhum dia válido informado' };
+            }
+            let firstTitle = '';
+            for (const day of days) {
+              const item = await routines.create({
+                title: action.data.title,
+                description: action.data.description ?? null,
+                day_of_week: day,
+                time: action.data.time ?? null,
+                is_active: true,
+              });
+              if (!firstTitle) firstTitle = item.title;
+            }
+            const dayWord = days.length === 1 ? 'dia' : 'dias';
+            return {
+              ok: true,
+              summary: `Rotina criada: ${firstTitle} (${days.length} ${dayWord})`,
+            };
           }
 
           case 'create_event': {

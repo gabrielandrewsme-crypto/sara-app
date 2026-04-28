@@ -10,6 +10,7 @@ type Props = {
   onLongPress?: () => void;
   accent?: string;
   trailing?: React.ReactNode;
+  editable?: boolean;
 };
 
 export function ListItemCard({
@@ -20,7 +21,9 @@ export function ListItemCard({
   onLongPress,
   accent,
   trailing,
+  editable = false,
 }: Props) {
+  const showTrailing = !!trailing || editable;
   return (
     <Pressable
       onPress={onPress}
@@ -39,7 +42,12 @@ export function ListItemCard({
         ) : null}
         {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       </View>
-      {trailing ? <View style={styles.trailing}>{trailing}</View> : null}
+      {showTrailing ? (
+        <View style={styles.trailing}>
+          {trailing}
+          {editable ? <Text style={styles.editIcon}>✎</Text> : null}
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -67,6 +75,13 @@ const styles = StyleSheet.create({
   trailing: {
     paddingRight: theme.spacing.md,
     justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  editIcon: {
+    color: theme.colors.textMuted,
+    fontSize: 18,
   },
   title: {
     color: theme.colors.text,

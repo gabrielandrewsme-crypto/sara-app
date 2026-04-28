@@ -36,6 +36,7 @@ export function NotesScreen({ navigation }: Props) {
               subtitle={note.content}
               meta={formatDateBR(note.updated_at)}
               onPress={() => navigation.navigate('NoteForm', { id: note.id })}
+              editable
             />
           ))
         )}

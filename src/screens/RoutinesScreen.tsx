@@ -135,13 +135,22 @@ export function RoutinesScreen({ navigation }: Props) {
                     {r.is_active ? 'on' : 'off'}
                   </Text>
                 </Pressable>
+                <Pressable
+                  hitSlop={12}
+                  onPress={() =>
+                    navigation.navigate('RoutineForm', { id: r.id })
+                  }
+                  style={styles.editButton}
+                >
+                  <Text style={styles.editIcon}>✎</Text>
+                </Pressable>
               </Pressable>
             );
           })
         )}
 
         <Text style={styles.footnote}>
-          Toque para marcar como feita hoje · pressione e segure para editar
+          Toque para marcar como feita hoje · ✎ para editar
         </Text>
       </ScrollView>
 
@@ -211,11 +220,22 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.surfaceAlt,
+    marginRight: theme.spacing.sm,
   },
   toggleText: {
     color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
+  },
+  editButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editIcon: {
+    color: theme.colors.textMuted,
+    fontSize: 18,
   },
   footnote: {
     color: theme.colors.textMuted,

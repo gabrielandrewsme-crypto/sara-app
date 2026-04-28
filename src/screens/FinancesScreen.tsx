@@ -85,6 +85,7 @@ export function FinancesScreen({ navigation }: Props) {
                 meta={formatDateBR(f.date)}
                 accent={color}
                 onPress={() => navigation.navigate('FinanceForm', { id: f.id })}
+                editable
                 trailing={
                   <Text style={[styles.amount, { color }]}>
                     {sign} {formatCurrencyBRL(value).replace('-', '')}

@@ -97,6 +97,7 @@ export function TasksScreen({ navigation }: Props) {
               accent={PRIORITY_COLOR[task.priority]}
               onPress={() => navigation.navigate('TaskForm', { id: task.id })}
               onLongPress={() => cycleStatus(task)}
+              editable
               trailing={
                 <Text style={styles.statusDot}>
                   {task.status === 'done' ? '✓' : task.status === 'in_progress' ? '~' : '·'}
