@@ -26,8 +26,8 @@ const STATUS_LABEL: Record<SphereState, string> = {
   responding: 'Respondendo…',
 };
 
-const RESPONDING_HOLD_MS = 1800;
-const AUTO_RESTART_DELAY_MS = 800;
+const AUTO_RESTART_DELAY_MS = 600;
+const RESPONDING_FALLBACK_MS = 12000;
 
 export function VoiceModeScreen({ navigation }: Props) {
   const limits = useVoiceLimits();
@@ -35,7 +35,6 @@ export function VoiceModeScreen({ navigation }: Props) {
   const dispatch = useSaraDispatcher();
 
   const [state, setState] = useState<SphereState>('idle');
-  const [response, setResponse] = useState('');
   const [hint, setHint] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recordElapsed, setRecordElapsed] = useState(0);
@@ -46,6 +45,7 @@ export function VoiceModeScreen({ navigation }: Props) {
   const respondingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closingRef = useRef(false);
+  const turnRef = useRef(0);
 
   const stopRecordTimer = useCallback(() => {
     if (tickRef.current) {
@@ -147,12 +147,12 @@ export function VoiceModeScreen({ navigation }: Props) {
         const action = await saraService.chat(nextHistory);
         const result = await dispatch(action);
 
+        const reply = action.response || 'Ok.';
         const finalHistory: SaraMessage[] = [
           ...nextHistory,
-          { role: 'assistant', content: action.response || 'Ok.' },
+          { role: 'assistant', content: reply },
         ];
         setHistory(finalHistory);
-        setResponse(action.response || 'Ok.');
         setHint(
           result.ok
             ? result.summary ?? null
@@ -162,14 +162,19 @@ export function VoiceModeScreen({ navigation }: Props) {
         );
         setState('responding');
 
-        if (limits.isPremium && action.response) {
-          ttsService.speak(action.response);
-        }
-
-        respondingTimerRef.current = setTimeout(() => {
-          if (closingRef.current) return;
+        const turn = ++turnRef.current;
+        let consumed = false;
+        const restartOnce = () => {
+          if (consumed || closingRef.current) return;
+          if (turnRef.current !== turn) return; // user interrupted, stale callback
+          consumed = true;
           scheduleRestart();
-        }, RESPONDING_HOLD_MS);
+        };
+
+        ttsService.speak(reply, { onDone: restartOnce });
+
+        // Fallback in case TTS never fires onDone (silent device, error)
+        respondingTimerRef.current = setTimeout(restartOnce, RESPONDING_FALLBACK_MS);
       } catch (e: any) {
         setErrorMsg(e?.message ?? 'Algo deu errado.');
         setState('idle');
@@ -200,8 +205,15 @@ export function VoiceModeScreen({ navigation }: Props) {
       startListening();
     } else if (state === 'listening') {
       stopAndProcess(false);
+    } else if (state === 'responding') {
+      // interrupt Sara talking and start listening immediately
+      turnRef.current++;
+      ttsService.stop();
+      clearScheduledTimers();
+      setHint(null);
+      startListening();
     }
-    // processing/responding: ignore taps
+    // processing: ignore taps (request in flight)
   }
 
   const showWarning =
@@ -240,11 +252,6 @@ export function VoiceModeScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.bottom}>
-        {response ? (
-          <Text style={styles.response} numberOfLines={6}>
-            {response}
-          </Text>
-        ) : null}
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
         {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
@@ -316,14 +323,6 @@ const styles = StyleSheet.create({
   bottom: {
     paddingBottom: theme.spacing.xxl,
     alignItems: 'center',
-  },
-  response: {
-    color: theme.colors.text,
-    fontSize: 17,
-    lineHeight: 24,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
   },
   hint: {
     color: theme.colors.primary,
