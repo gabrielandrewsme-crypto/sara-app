@@ -121,7 +121,12 @@ function speakWithDevice(text: string, onDone?: () => void) {
 export const ttsService = {
   async speak(
     text: string,
-    options: { voice?: SaraVoice; onDone?: () => void } = {},
+    options: {
+      voice?: SaraVoice;
+      onDone?: () => void;
+      /** When true, throws instead of falling back to the device TTS. */
+      strict?: boolean;
+    } = {},
   ): Promise<void> {
     if (!text) {
       options.onDone?.();
@@ -145,7 +150,11 @@ export const ttsService = {
       );
       await playBase64Audio(audioBase64, mimeType, options.onDone);
     } catch (e) {
-      // Fall back to on-device TTS so the user always hears something
+      if (options.strict) {
+        throw e;
+      }
+      // Lenient mode: fall back to on-device TTS so the user always hears
+      // something. Used in voice mode where uptime matters more than fidelity.
       console.warn('[tts] OpenAI TTS failed, falling back to device:', e);
       speakWithDevice(text, options.onDone);
     }
@@ -157,8 +166,9 @@ export const ttsService = {
     sessionCounter++;
   },
 
+  /** Strict by design: previewing a voice must not silently fall back. */
   speakSample(voice: SaraVoice, onDone?: () => void) {
-    return this.speak(SAMPLE_TEXT, { voice, onDone });
+    return this.speak(SAMPLE_TEXT, { voice, onDone, strict: voice !== 'device' });
   },
 
   async isSpeaking(): Promise<boolean> {
