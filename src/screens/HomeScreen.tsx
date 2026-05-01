@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { useAuth } from '../hooks/useAuth';
 import { AppStackParamList } from '../navigation/types';
@@ -89,7 +89,11 @@ export function HomeScreen({ navigation }: Props) {
         ]}
         hitSlop={8}
       >
-        <Text style={styles.voiceFabIcon}>🎤</Text>
+        <Image
+          source={require('../../assets/voice-icon.jpg')}
+          style={styles.voiceFabIcon}
+          resizeMode="contain"
+        />
       </Pressable>
     </View>
   );
@@ -165,20 +169,22 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: theme.colors.primary,
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.4,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     elevation: 10,
   },
   voiceFabPressed: {
-    backgroundColor: theme.colors.primaryPressed,
+    backgroundColor: '#E5E5E5',
     transform: [{ scale: 0.96 }],
   },
   voiceFabIcon: {
-    fontSize: 26,
+    width: 38,
+    height: 38,
   },
 });
