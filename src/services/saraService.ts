@@ -71,4 +71,25 @@ export const saraService = {
     }
     return text.trim();
   },
+
+  async synthesizeSpeech(
+    text: string,
+    voice: string,
+  ): Promise<{ audioBase64: string; mimeType: string }> {
+    const { data, error } = await supabase.functions.invoke('sara-tts', {
+      body: { text, voice },
+    });
+    if (error) {
+      throw new Error(
+        await unwrapInvokeError(error, 'Erro ao sintetizar voz'),
+      );
+    }
+    const audioBase64 = (data as { audioBase64?: string } | null)?.audioBase64;
+    const mimeType =
+      (data as { mimeType?: string } | null)?.mimeType ?? 'audio/mpeg';
+    if (!audioBase64) {
+      throw new Error('Resposta sem áudio.');
+    }
+    return { audioBase64, mimeType };
+  },
 };

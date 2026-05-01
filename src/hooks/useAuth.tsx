@@ -8,17 +8,38 @@ import React, {
 } from 'react';
 import { authService, SignInInput, SignUpInput } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
+import type { SaraVoice } from '../services/ttsService';
 
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
   initializing: boolean;
   isPremium: boolean;
+  saraVoice: SaraVoice;
   signIn: (input: SignInInput) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
   updateName: (fullName: string) => Promise<void>;
+  updateSaraVoice: (voice: SaraVoice) => Promise<void>;
 };
+
+const VALID_VOICES: SaraVoice[] = [
+  'device',
+  'alloy',
+  'echo',
+  'fable',
+  'onyx',
+  'nova',
+  'shimmer',
+];
+
+function readSaraVoice(metadata: Record<string, unknown> | undefined): SaraVoice {
+  const value = metadata?.sara_voice;
+  if (typeof value === 'string' && (VALID_VOICES as string[]).includes(value)) {
+    return value as SaraVoice;
+  }
+  return 'nova';
+}
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -59,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       initializing,
       isPremium: !!session?.user?.user_metadata?.is_premium,
+      saraVoice: readSaraVoice(session?.user?.user_metadata),
       signIn: async (input) => {
         await authService.signIn(input);
       },
@@ -71,6 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateName: async (fullName: string) => {
         const { data, error } = await supabase.auth.updateUser({
           data: { full_name: fullName },
+        });
+        if (error) throw error;
+        if (data.user) {
+          setSession((curr) =>
+            curr ? { ...curr, user: data.user! } : curr,
+          );
+        }
+      },
+      updateSaraVoice: async (voice: SaraVoice) => {
+        const { data, error } = await supabase.auth.updateUser({
+          data: { sara_voice: voice },
         });
         if (error) throw error;
         if (data.user) {

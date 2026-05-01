@@ -12,6 +12,11 @@ import {
 import { Button } from '../components/Button';
 import { useAuth } from '../hooks/useAuth';
 import { AppStackParamList } from '../navigation/types';
+import {
+  SARA_VOICE_OPTIONS,
+  SaraVoice,
+  ttsService,
+} from '../services/ttsService';
 import { globalStyles } from '../styles/globalStyles';
 import { theme } from '../styles/theme';
 import { formatDateBR } from '../utils/datetime';
@@ -29,7 +34,7 @@ function getInitial(name: string, email: string): string {
 }
 
 export function AccountScreen({}: Props) {
-  const { user, signOut, updateName } = useAuth();
+  const { user, signOut, updateName, saraVoice, updateSaraVoice } = useAuth();
   const currentName = getDisplayName(user?.user_metadata);
   const email = user?.email ?? '';
   const initial = getInitial(currentName, email);
@@ -38,6 +43,41 @@ export function AccountScreen({}: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(currentName);
   const [saving, setSaving] = useState(false);
+  const [savingVoice, setSavingVoice] = useState<SaraVoice | null>(null);
+  const [previewing, setPreviewing] = useState<SaraVoice | null>(null);
+
+  useEffect(() => {
+    return () => {
+      ttsService.stop();
+    };
+  }, []);
+
+  async function handleSelectVoice(voice: SaraVoice) {
+    if (savingVoice || voice === saraVoice) return;
+    try {
+      setSavingVoice(voice);
+      await updateSaraVoice(voice);
+    } catch (e: any) {
+      Alert.alert('Erro', e?.message ?? 'Não foi possível salvar a voz.');
+    } finally {
+      setSavingVoice(null);
+    }
+  }
+
+  async function handlePreview(voice: SaraVoice) {
+    if (previewing) {
+      ttsService.stop();
+      setPreviewing(null);
+      return;
+    }
+    try {
+      setPreviewing(voice);
+      await ttsService.speakSample(voice, () => setPreviewing(null));
+    } catch (e: any) {
+      setPreviewing(null);
+      Alert.alert('Erro', e?.message ?? 'Não foi possível tocar a amostra.');
+    }
+  }
 
   useEffect(() => {
     if (!editing) setDraft(currentName);
@@ -132,6 +172,49 @@ export function AccountScreen({}: Props) {
       <View style={styles.section}>
         <Text style={styles.label}>Email</Text>
         <Text style={[styles.value, styles.valueMuted]}>{email || '—'}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Voz da Sara</Text>
+        <Text style={styles.voiceHint}>
+          Usada no modo voz. As vozes "naturais" usam o TTS da OpenAI;
+          "voz do dispositivo" não tem custo.
+        </Text>
+        <View style={styles.voiceList}>
+          {SARA_VOICE_OPTIONS.map((opt) => {
+            const selected = saraVoice === opt.id;
+            const isPreviewing = previewing === opt.id;
+            return (
+              <Pressable
+                key={opt.id}
+                onPress={() => handleSelectVoice(opt.id)}
+                style={[
+                  styles.voiceRow,
+                  selected && styles.voiceRowSelected,
+                ]}
+              >
+                <View
+                  style={[styles.radio, selected && styles.radioSelected]}
+                >
+                  {selected ? <View style={styles.radioInner} /> : null}
+                </View>
+                <View style={styles.voiceText}>
+                  <Text style={styles.voiceLabel}>{opt.label}</Text>
+                  <Text style={styles.voiceSub}>{opt.hint}</Text>
+                </View>
+                <Pressable
+                  onPress={() => handlePreview(opt.id)}
+                  hitSlop={12}
+                  style={styles.previewButton}
+                >
+                  <Text style={styles.previewIcon}>
+                    {isPreviewing ? '■' : '▶'}
+                  </Text>
+                </Pressable>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -294,5 +377,76 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xl,
     borderWidth: 1,
     borderColor: theme.colors.danger,
+  },
+  voiceHint: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    marginBottom: theme.spacing.sm,
+    lineHeight: 16,
+  },
+  voiceList: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    overflow: 'hidden',
+  },
+  voiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border,
+    gap: theme.spacing.md,
+  },
+  voiceRowSelected: {
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioSelected: {
+    borderColor: theme.colors.primary,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.primary,
+  },
+  voiceText: {
+    flex: 1,
+  },
+  voiceLabel: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  voiceSub: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  previewButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewIcon: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

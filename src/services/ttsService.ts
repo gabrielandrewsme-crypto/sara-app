@@ -1,34 +1,168 @@
+import {
+  AudioPlayer,
+  createAudioPlayer,
+  setAudioModeAsync,
+} from 'expo-audio';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Speech from 'expo-speech';
+import { saraService } from './saraService';
 
-type SpeakOptions = {
-  language?: string;
-  rate?: number;
-  pitch?: number;
-  onDone?: () => void;
-};
+export type SaraVoice =
+  | 'device'
+  | 'alloy'
+  | 'echo'
+  | 'fable'
+  | 'onyx'
+  | 'nova'
+  | 'shimmer';
 
-/**
- * On-device TTS via expo-speech. Caller is responsible for gating on
- * `isPremium` — this module deliberately doesn't know about plans so
- * it stays a thin shim around expo-speech.
- */
+export const SARA_VOICE_OPTIONS: {
+  id: SaraVoice;
+  label: string;
+  hint: string;
+}[] = [
+  { id: 'nova', label: 'Nova', hint: 'Voz natural · calma e amigável' },
+  { id: 'shimmer', label: 'Shimmer', hint: 'Voz natural · suave' },
+  { id: 'alloy', label: 'Alloy', hint: 'Voz natural · neutra' },
+  { id: 'echo', label: 'Echo', hint: 'Voz natural · masculina' },
+  { id: 'fable', label: 'Fable', hint: 'Voz natural · narrativa' },
+  { id: 'onyx', label: 'Onyx', hint: 'Voz natural · grave' },
+  { id: 'device', label: 'Voz do dispositivo', hint: 'Sem custo · qualidade básica' },
+];
+
+const SAMPLE_TEXT =
+  'Oi, eu sou a Sara. Vou te ajudar a organizar seu dia.';
+
+let activePlayer: AudioPlayer | null = null;
+let activeSubscription: { remove: () => void } | null = null;
+let sessionCounter = 0;
+
+function stopActivePlayer() {
+  if (activeSubscription) {
+    try {
+      activeSubscription.remove();
+    } catch {
+      // ignore
+    }
+    activeSubscription = null;
+  }
+  if (activePlayer) {
+    try {
+      activePlayer.pause();
+    } catch {
+      // ignore
+    }
+    try {
+      activePlayer.release();
+    } catch {
+      // ignore
+    }
+    activePlayer = null;
+  }
+}
+
+async function playBase64Audio(
+  base64: string,
+  mimeType: string,
+  onDone?: () => void,
+): Promise<void> {
+  const ext = mimeType.includes('mpeg') ? 'mp3' : 'mp3';
+  const path = `${FileSystem.cacheDirectory}sara_tts_${Date.now()}.${ext}`;
+  await FileSystem.writeAsStringAsync(path, base64, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  await setAudioModeAsync({ playsInSilentMode: true });
+
+  stopActivePlayer();
+  const session = ++sessionCounter;
+
+  const player = createAudioPlayer(path);
+  activePlayer = player;
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    if (sessionCounter !== session) return;
+    finished = true;
+    onDone?.();
+  };
+
+  const sub = player.addListener(
+    'playbackStatusUpdate',
+    (status: { didJustFinish?: boolean }) => {
+      if (status?.didJustFinish) {
+        finish();
+      }
+    },
+  );
+  activeSubscription = sub;
+
+  try {
+    player.play();
+  } catch (e) {
+    finish();
+    throw e;
+  }
+}
+
+function speakWithDevice(text: string, onDone?: () => void) {
+  Speech.stop();
+  Speech.speak(text, {
+    language: 'pt-BR',
+    rate: 1.0,
+    pitch: 1.0,
+    onDone,
+    onStopped: onDone,
+    onError: onDone,
+  });
+}
+
 export const ttsService = {
-  speak(text: string, options: SpeakOptions = {}) {
-    if (!text) return;
+  async speak(
+    text: string,
+    options: { voice?: SaraVoice; onDone?: () => void } = {},
+  ): Promise<void> {
+    if (!text) {
+      options.onDone?.();
+      return;
+    }
+    const voice: SaraVoice = options.voice ?? 'nova';
+
     Speech.stop();
-    Speech.speak(text, {
-      language: options.language ?? 'pt-BR',
-      rate: options.rate ?? 1.0,
-      pitch: options.pitch ?? 1.0,
-      onDone: options.onDone,
-      onStopped: options.onDone,
-      onError: options.onDone,
-    });
+    stopActivePlayer();
+    sessionCounter++;
+
+    if (voice === 'device') {
+      speakWithDevice(text, options.onDone);
+      return;
+    }
+
+    try {
+      const { audioBase64, mimeType } = await saraService.synthesizeSpeech(
+        text,
+        voice,
+      );
+      await playBase64Audio(audioBase64, mimeType, options.onDone);
+    } catch (e) {
+      // Fall back to on-device TTS so the user always hears something
+      console.warn('[tts] OpenAI TTS failed, falling back to device:', e);
+      speakWithDevice(text, options.onDone);
+    }
   },
+
   stop() {
     Speech.stop();
+    stopActivePlayer();
+    sessionCounter++;
   },
+
+  speakSample(voice: SaraVoice, onDone?: () => void) {
+    return this.speak(SAMPLE_TEXT, { voice, onDone });
+  },
+
   async isSpeaking(): Promise<boolean> {
+    if (activePlayer) return true;
     try {
       return await Speech.isSpeakingAsync();
     } catch {

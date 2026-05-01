@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SaraSphere, SphereState } from '../components/SaraSphere';
+import { useAuth } from '../hooks/useAuth';
 import { useSaraDispatcher } from '../hooks/useSaraDispatcher';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { formatSeconds, useVoiceLimits } from '../hooks/useVoiceLimits';
@@ -33,6 +34,7 @@ export function VoiceModeScreen({ navigation }: Props) {
   const limits = useVoiceLimits();
   const voice = useVoiceInput();
   const dispatch = useSaraDispatcher();
+  const { saraVoice } = useAuth();
 
   const [state, setState] = useState<SphereState>('idle');
   const [hint, setHint] = useState<string | null>(null);
@@ -171,7 +173,7 @@ export function VoiceModeScreen({ navigation }: Props) {
           scheduleRestart();
         };
 
-        ttsService.speak(reply, { onDone: restartOnce });
+        ttsService.speak(reply, { voice: saraVoice, onDone: restartOnce });
 
         // Fallback in case TTS never fires onDone (silent device, error)
         respondingTimerRef.current = setTimeout(restartOnce, RESPONDING_FALLBACK_MS);
@@ -182,7 +184,7 @@ export function VoiceModeScreen({ navigation }: Props) {
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [voice, limits, history, dispatch, stopRecordTimer],
+    [voice, limits, history, dispatch, stopRecordTimer, saraVoice],
   );
 
   const scheduleRestart = useCallback(
