@@ -7,6 +7,8 @@ import { AppStackParamList } from '../navigation/types';
 import { globalStyles } from '../styles/globalStyles';
 import { theme } from '../styles/theme';
 
+const VOICE_FAB_BOTTOM = theme.spacing.xl;
+
 type Props = NativeStackScreenProps<AppStackParamList, 'Home'>;
 
 type ModuleRoute = Extract<
@@ -40,10 +42,8 @@ export function HomeScreen({ navigation }: Props) {
   const greeting = displayName || 'por aí';
 
   return (
-    <ScrollView
-      style={globalStyles.screen}
-      contentContainerStyle={styles.content}
-    >
+    <View style={globalStyles.screen}>
+      <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
           <Text style={globalStyles.title}>Olá, {greeting}</Text>
@@ -79,7 +79,19 @@ export function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Chat')}
         style={{ marginTop: theme.spacing.lg }}
       />
-    </ScrollView>
+      </ScrollView>
+
+      <Pressable
+        onPress={() => navigation.navigate('VoiceMode')}
+        style={({ pressed }) => [
+          styles.voiceFab,
+          pressed && styles.voiceFabPressed,
+        ]}
+        hitSlop={8}
+      >
+        <Text style={styles.voiceFabIcon}>🎤</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -145,5 +157,28 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 13,
     marginTop: theme.spacing.xs,
+  },
+  voiceFab: {
+    position: 'absolute',
+    right: theme.spacing.lg,
+    bottom: VOICE_FAB_BOTTOM,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+  },
+  voiceFabPressed: {
+    backgroundColor: theme.colors.primaryPressed,
+    transform: [{ scale: 0.96 }],
+  },
+  voiceFabIcon: {
+    fontSize: 26,
   },
 });

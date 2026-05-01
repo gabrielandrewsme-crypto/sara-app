@@ -13,6 +13,7 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   initializing: boolean;
+  isPremium: boolean;
   signIn: (input: SignInInput) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => Promise<void>;
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       user: session?.user ?? null,
       initializing,
+      isPremium: !!session?.user?.user_metadata?.is_premium,
       signIn: async (input) => {
         await authService.signIn(input);
       },

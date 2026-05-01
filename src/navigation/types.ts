@@ -6,6 +6,7 @@ export type AuthStackParamList = {
 export type AppStackParamList = {
   Home: undefined;
   Chat: undefined;
+  VoiceMode: undefined;
   Account: undefined;
 
   Routines: undefined;

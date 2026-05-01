@@ -21,6 +21,7 @@ import { SignUpScreen } from '../screens/SignUpScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { TaskFormScreen } from '../screens/TaskFormScreen';
 import { TasksScreen } from '../screens/TasksScreen';
+import { VoiceModeScreen } from '../screens/VoiceModeScreen';
 import { theme } from '../styles/theme';
 import { AppStackParamList, AuthStackParamList } from './types';
 
@@ -76,6 +77,11 @@ function AppNavigatorInner() {
         name="Account"
         component={AccountScreen}
         options={{ title: 'Minha conta' }}
+      />
+      <AppStack.Screen
+        name="VoiceMode"
+        component={VoiceModeScreen}
+        options={{ headerShown: false, presentation: 'fullScreenModal' }}
       />
 
       <AppStack.Screen
