@@ -177,8 +177,7 @@ export function AccountScreen({}: Props) {
       <View style={styles.section}>
         <Text style={styles.label}>Voz da Sara</Text>
         <Text style={styles.voiceHint}>
-          Usada no modo voz. As vozes "naturais" usam o TTS da OpenAI;
-          "voz do dispositivo" não tem custo.
+          Usada no modo voz. Toque em ▶ para ouvir uma amostra.
         </Text>
         <View style={styles.voiceList}>
           {SARA_VOICE_OPTIONS.map((opt) => {

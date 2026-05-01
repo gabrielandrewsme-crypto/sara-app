@@ -23,15 +23,7 @@ type AuthContextValue = {
   updateSaraVoice: (voice: SaraVoice) => Promise<void>;
 };
 
-const VALID_VOICES: SaraVoice[] = [
-  'device',
-  'alloy',
-  'echo',
-  'fable',
-  'onyx',
-  'nova',
-  'shimmer',
-];
+const VALID_VOICES: SaraVoice[] = ['nova', 'shimmer', 'alloy'];
 
 function readSaraVoice(metadata: Record<string, unknown> | undefined): SaraVoice {
   const value = metadata?.sara_voice;

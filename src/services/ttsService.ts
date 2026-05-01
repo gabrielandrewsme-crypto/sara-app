@@ -7,27 +7,16 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Speech from 'expo-speech';
 import { saraService } from './saraService';
 
-export type SaraVoice =
-  | 'device'
-  | 'alloy'
-  | 'echo'
-  | 'fable'
-  | 'onyx'
-  | 'nova'
-  | 'shimmer';
+export type SaraVoice = 'nova' | 'shimmer' | 'alloy';
 
 export const SARA_VOICE_OPTIONS: {
   id: SaraVoice;
   label: string;
   hint: string;
 }[] = [
-  { id: 'nova', label: 'Nova', hint: 'Voz natural · calma e amigável' },
-  { id: 'shimmer', label: 'Shimmer', hint: 'Voz natural · suave' },
-  { id: 'alloy', label: 'Alloy', hint: 'Voz natural · neutra' },
-  { id: 'echo', label: 'Echo', hint: 'Voz natural · masculina' },
-  { id: 'fable', label: 'Fable', hint: 'Voz natural · narrativa' },
-  { id: 'onyx', label: 'Onyx', hint: 'Voz natural · grave' },
-  { id: 'device', label: 'Voz do dispositivo', hint: 'Sem custo · qualidade básica' },
+  { id: 'nova', label: 'Nova', hint: 'Calma e amigável' },
+  { id: 'shimmer', label: 'Shimmer', hint: 'Suave' },
+  { id: 'alloy', label: 'Alloy', hint: 'Neutra' },
 ];
 
 const SAMPLE_TEXT =
@@ -138,11 +127,6 @@ export const ttsService = {
     stopActivePlayer();
     sessionCounter++;
 
-    if (voice === 'device') {
-      speakWithDevice(text, options.onDone);
-      return;
-    }
-
     try {
       const { audioBase64, mimeType } = await saraService.synthesizeSpeech(
         text,
@@ -154,7 +138,8 @@ export const ttsService = {
         throw e;
       }
       // Lenient mode: fall back to on-device TTS so the user always hears
-      // something. Used in voice mode where uptime matters more than fidelity.
+      // something if OpenAI is unreachable. Used in voice mode where uptime
+      // matters more than fidelity.
       console.warn('[tts] OpenAI TTS failed, falling back to device:', e);
       speakWithDevice(text, options.onDone);
     }
@@ -168,7 +153,7 @@ export const ttsService = {
 
   /** Strict by design: previewing a voice must not silently fall back. */
   speakSample(voice: SaraVoice, onDone?: () => void) {
-    return this.speak(SAMPLE_TEXT, { voice, onDone, strict: voice !== 'device' });
+    return this.speak(SAMPLE_TEXT, { voice, onDone, strict: true });
   },
 
   async isSpeaking(): Promise<boolean> {
